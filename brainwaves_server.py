@@ -9,28 +9,30 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # ソケット登録
 server.bind(("0.0.0.0", 33400))
 # ソケット接続準備
-server.listen(6)
+server.listen()
 
-def loop_handler(connection, address):
+def loop_handler(client):
     while True:
-				# 1024バイトずつデータを受け取る
-        data = client.recv(1024)
-				# すべて受信したらループを抜ける
-        if not data:
+        try:
+            # 1024バイトずつデータを受け取る
+            data = client.recv(1024)
+            if not data:
+                break
+            brainwave = np.frombuffer(data, dtype=np.float64)
+            print(brainwave)
+            if brainwave[3] == 1 :
+                print(brainwave[0] ,"は寝ています")
+        except KeyboardInterrupt:
             break
-        brainwave = np.frombuffer(data, dtype=np.float64)
-        if brainwave[3] == 1 :
-            print(brainwave[0] ,"は寝ています")
-    # 接続を切る
     client.close()
 
 while True:
     try:
 				# ソケット接続待機
-        client, addr = server.accept()
-    except InterruptedError:
+        client, _ = server.accept()
+    except KeyboardInterrupt:
         sys.exit()
     # スレッド作成
-    thread = threading.Thread(target=loop_handler, args=(client, addr), daemon=True)
+    thread = threading.Thread(target=loop_handler, args=(client,), daemon=True)
     # スレッドスタート
     thread.start()
