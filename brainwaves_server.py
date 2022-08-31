@@ -2,6 +2,7 @@ import numpy as np
 import socket
 import sys
 import threading
+import redis
 
 # socket生成
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -10,6 +11,9 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(("0.0.0.0", 33400))
 # ソケット接続準備
 server.listen()
+
+# Redis に接続します
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 def loop_handler(client):
     while True:
@@ -21,7 +25,9 @@ def loop_handler(client):
             brainwave = np.frombuffer(data, dtype=np.float64)
             print(brainwave)
             if brainwave[3] == 1 :
-                print(brainwave[0] ,"は寝ています")
+                r.set(int(brainwave[0]), 'unhealthy')
+            if brainwave[3] == 0 :
+                r.set(int(brainwave[0]), 'healthy')
         except KeyboardInterrupt:
             break
     client.close()
